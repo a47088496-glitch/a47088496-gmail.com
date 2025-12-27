@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Clock - Multiple Time Zones</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .clock-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .clock-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .timezone-label {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .clock-display {
+            font-size: 48px;
+            font-weight: bold;
+            color: #333;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            letter-spacing: 3px;
+        }
+
+        .date-display {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .timezone-info {
+            font-size: 12px;
+            color: #999;
+            font-style: italic;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .controls h1 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 28px;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.3);
+            border: 2px solid white;
+            color: white;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .main-container {
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .clock-display {
+                font-size: 36px;
+            }
+
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .controls h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="controls">
+            <h1>🕐 Digital Clock - Multiple Time Zones</h1>
+            <button onclick="toggleFormat()">Toggle 12/24 Hour Format</button>
+            <button onclick="addRandomTimezone()">Add Random Timezone</button>
+            <button onclick="resetTimezones()">Reset to Default</button>
+        </div>
+
+        <div class="container" id="clockContainer"></div>
+    </div>
+
+    <script>
+        // Default timezones to display
+        const defaultTimezones = [
+            { name: 'New York', offset: -5 },
+            { name: 'London', offset: 0 },
+            { name: 'Tokyo', offset: 9 },
+            { name: 'Sydney', offset: 10 },
+            { name: 'Dubai', offset: 4 },
+            { name: 'Singapore', offset: 8 }
+        ];
+
+        let timezones = [...defaultTimezones];
+        let is24HourFormat = true;
+
+        // Available timezones for random selection
+        const availableTimezones = [
+            { name: 'Los Angeles', offset: -8 },
+            { name: 'Chicago', offset: -6 },
+            { name: 'New York', offset: -5 },
+            { name: 'London', offset: 0 },
+            { name: 'Paris', offset: 1 },
+            { name: 'Moscow', offset: 3 },
+            { name: 'Dubai', offset: 4 },
+            { name: 'India', offset: 5.5 },
+            { name: 'Bangkok', offset: 7 },
+            { name: 'Singapore', offset: 8 },
+            { name: 'Hong Kong', offset: 8 },
+            { name: 'Tokyo', offset: 9 },
+            { name: 'Sydney', offset: 10 },
+            { name: 'Auckland', offset: 12 }
+        ];
+
+        function getTimeForTimezone(offset) {
+            const utcNow = new Date();
+            const localTime = new Date(utcNow.getTime() + utcNow.getTimezoneOffset() * 60000);
+            const timezoneTime = new Date(localTime.getTime() + offset * 3600000);
+            return timezoneTime;
+        }
+
+        function formatTime(date) {
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+
+            if (is24HourFormat) {
+                return `${hours}:${minutes}:${seconds}`;
+            } else {
+                let displayHours = parseInt(hours);
+                const meridiem = displayHours >= 12 ? 'PM' : 'AM';
+                if (displayHours > 12) displayHours -= 12;
+                if (displayHours === 0) displayHours = 12;
+                return `${String(displayHours).padStart(2, '0')}:${minutes}:${seconds} ${meridiem}`;
+            }
+        }
+
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function updateClocks() {
+            const container = document.getElementById('clockContainer');
+            container.innerHTML = '';
+
+            timezones.forEach((tz, index) => {
+                const time = getTimeForTimezone(tz.offset);
+                const timeString = formatTime(time);
+                const dateString = formatDate(time);
+                const offsetString = tz.offset >= 0 ? `+${tz.offset}` : `${tz.offset}`;
+
+                const card = document.createElement('div');
+                card.className = 'clock-card';
+                card.innerHTML = `
+                    <div class="timezone-label">${tz.name}</div>
+                    <div class="clock-display">${timeString}</div>
+                    <div class="date-display">${dateString}</div>
+                    <div class="timezone-info">UTC ${offsetString}</div>
+                    ${timezones.length > defaultTimezones.length ? `<button onclick="removeTimezone(${index})" style="width: 90%; margin-top: 15px; font-size: 12px;">Remove</button>` : ''}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function toggleFormat() {
+            is24HourFormat = !is24HourFormat;
+            updateClocks();
+        }
+
+        function addRandomTimezone() {
+            const randomTz = availableTimezones[Math.floor(Math.random() * availableTimezones.length)];
+            if (!timezones.some(tz => tz.name === randomTz.name)) {
+                timezones.push(randomTz);
+                updateClocks();
+            } else {
+                alert('This timezone is already displayed!');
+            }
+        }
+
+        function removeTimezone(index) {
+            if (timezones.length > defaultTimezones.length) {
+                timezones.splice(index, 1);
+                updateClocks();
+            }
+        }
+
+        function resetTimezones() {
+            timezones = [...defaultTimezones];
+            is24HourFormat = true;
+            updateClocks();
+        }
+
+        // Initialize clocks and update every second
+        updateClocks();
+        setInterval(updateClocks, 1000);
+    </script>
+</body>
+</html>
